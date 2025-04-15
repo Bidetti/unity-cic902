@@ -1,10 +1,25 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class LevelUpUI : MonoBehaviour
 {
-    public Text levelUpText;
-    public Text levelText;
+    public static LevelUpUI Instance { get; private set; }
+
+    public TextMeshProUGUI levelUpText;
+    public TextMeshProUGUI levelText;
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     void Start()
     {

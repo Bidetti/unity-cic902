@@ -1,10 +1,11 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Tutorial : MonoBehaviour
 {
-    public Text tutorialText;
-    public Text subtitleText; // Novo campo para o subtítulo
+    public TextMeshProUGUI tutorialText;
+    public TextMeshProUGUI subtitleText;
     public Player player;
     public GameManager gameManager;
     public GameObject enemyPrefab;
