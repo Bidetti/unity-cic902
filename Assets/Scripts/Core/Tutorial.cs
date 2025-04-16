@@ -1,6 +1,8 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class Tutorial : MonoBehaviour
 {
@@ -11,7 +13,7 @@ public class Tutorial : MonoBehaviour
     public GameObject enemyPrefab;
     public Transform spawnPoint;
 
-    private int currentStep = 0;
+    public int currentStep = 0;
     private bool enemyKilled = false;
     private bool itemPickedUp = false;
 
@@ -24,7 +26,7 @@ public class Tutorial : MonoBehaviour
     {
         if (currentStep == 8 && enemyKilled)
         {
-            ShowNextStep();
+            OnPlayerAction();
         }
         if (currentStep == 9 && itemPickedUp)
         {
@@ -37,7 +39,7 @@ public class Tutorial : MonoBehaviour
         switch (currentStep)
         {
             case 0:
-                tutorialText.text = "Use WASD para se mover.";
+                tutorialText.text = "Use AD para se mover.";
                 subtitleText.text = "";
                 break;
             case 1:
@@ -45,7 +47,7 @@ public class Tutorial : MonoBehaviour
                 subtitleText.text = "";
                 break;
             case 2:
-                tutorialText.text = "Pressione Espaço para atacar.";
+                tutorialText.text = "Pressione SPACE para atacar.";
                 subtitleText.text = "";
                 break;
             case 3:
@@ -58,26 +60,30 @@ public class Tutorial : MonoBehaviour
                 break;
             case 5:
                 tutorialText.text = "Pressione 3 para o terceiro ataque especial.";
-                subtitleText.text = "Este ataque causa dano em área.";
+                subtitleText.text = "Este ataque causa dano em area.";
                 break;
             case 6:
-                tutorialText.text = "Pegue um item do chão.";
-                subtitleText.text = "";
-                break;
-            case 7:
-                tutorialText.text = "Mate o inimigo para concluir o tutorial.";
+                tutorialText.text = "Mate o inimigo";
                 subtitleText.text = "";
                 SpawnEnemy();
                 break;
-            case 8:
-                tutorialText.text = "Pegue o item dropado pelo inimigo.";
-                subtitleText.text = "";
-                break;
+            //case 7:
+            //    tutorialText.text = "Pegue o item dropado pelo inimigo.";
+            //    subtitleText.text = "";
+            //    break;
         }
     }
 
     public void OnPlayerAction()
     {
+        //if (currentStep == 7 && !itemPickedUp)
+        //{
+        //    return;
+        //}
+        if (currentStep == 6 && !enemyKilled)
+        {
+            return;
+        }
         currentStep++;
         ShowNextStep();
     }
@@ -104,5 +110,16 @@ public class Tutorial : MonoBehaviour
     {
         tutorialText.text = "Tutorial concluído!";
         subtitleText.text = "";
+        StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    IEnumerator WaitAndLoadMainScene()
+    {
+        // Tocar música aqui
+        // AudioSource audioSource = GetComponent<AudioSource>();
+        // audioSource.Play();
+
+        yield return new WaitForSeconds(5);
+        SceneManager.LoadScene("Main");
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Enemy1 : MonoBehaviour
 {
@@ -7,8 +8,9 @@ public class Enemy1 : MonoBehaviour
     public float criticalChance = 0.1f;
     public float criticalMultiplier = 2f;
 
-    public GameObject[] itemPrefabs; // Array de prefabs de itens
-    public bool isTutorialEnemy = false; // Flag para indicar se é um inimigo do tutorial
+    public GameObject[] itemPrefabs;
+    public bool isTutorialEnemy = false;
+    public Transform damageTextPosition;
 
     private int maxHealth;
     private int currentHealth;
@@ -95,10 +97,18 @@ public class Enemy1 : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+        ShowDamage(damage);
         if (currentHealth <= 0)
         {
             Die();
         }
+    }
+
+    void ShowDamage(int damage)
+    {
+        GameObject damageText = Instantiate(playerScript.damageTextPrefab, damageTextPosition.position, Quaternion.identity);
+        damageText.GetComponent<Text>().text = damage.ToString();
+        Destroy(damageText, 1f);
     }
 
     void Die()

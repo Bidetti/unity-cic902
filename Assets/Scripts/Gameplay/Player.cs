@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public float jumpForce = 10f;
+    public float jumpForce = 2f;
     public GameObject damageTextPrefab;
     public Transform damageTextPosition;
 
@@ -30,6 +30,9 @@ public class Player : MonoBehaviour
     private Rigidbody2D rb;
     private Tutorial tutorial;
 
+    public enum ControlMode { Tutorial, Gameplay }
+    public ControlMode controlMode = ControlMode.Gameplay;
+
     void Start()
     {
         currentHealth = maxHealth;
@@ -39,11 +42,31 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        Move();
-        HandleAttacks();
-        HandleJump();
+        if (controlMode == ControlMode.Tutorial)
+        {
+            TutorialControl();
+        }
+        else
+        {
+            GameplayControl();
+        }
+
         UpdateAttackTimers();
         UpdateDoubleJumpTimer();
+    }
+
+    void TutorialControl()
+    {
+        Move();
+        HandleJump();
+        HandleAttacks();
+    }
+
+    void GameplayControl()
+    {
+        Move();
+        HandleJump();
+        HandleAttacks();
     }
 
     void Move()
@@ -53,7 +76,7 @@ public class Player : MonoBehaviour
         Vector3 movement = new Vector3(moveX, 0f, 0f);
         transform.position += movement * moveSpeed * Time.deltaTime;
 
-        if (moveX != 0)
+        if (moveX != 0 && controlMode == ControlMode.Tutorial && tutorial.currentStep == 0)
         {
             tutorial.OnPlayerAction();
         }
@@ -66,12 +89,18 @@ public class Player : MonoBehaviour
             if (isGrounded)
             {
                 Jump();
-                tutorial.OnPlayerAction();
+                if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 1)
+                {
+                    tutorial.OnPlayerAction();
+                }
             }
             else if (canDoubleJump)
             {
                 DoubleJump();
-                tutorial.OnPlayerAction();
+                if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 1)
+                {
+                    tutorial.OnPlayerAction();
+                }
             }
         }
     }
@@ -107,6 +136,10 @@ public class Player : MonoBehaviour
         {
             isGrounded = true;
         }
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            TakeDamage(10);
+        }
     }
 
     void HandleAttacks()
@@ -114,22 +147,34 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Attack(1);
-            tutorial.OnPlayerAction();
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 2)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
         if (Input.GetKeyDown(KeyCode.Alpha1) && attackTimers[0] <= 0)
         {
             SpecialAttack(1, 0);
-            tutorial.OnPlayerAction();
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 3)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
         if (Input.GetKeyDown(KeyCode.Alpha2) && attackTimers[1] <= 0)
         {
             SpecialAttack(2, 1);
-            tutorial.OnPlayerAction();
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 4)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
         if (Input.GetKeyDown(KeyCode.Alpha3) && attackTimers[2] <= 0)
         {
             SpecialAttack(3, 2);
-            tutorial.OnPlayerAction();
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 5)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
     }
 
@@ -141,13 +186,18 @@ public class Player : MonoBehaviour
         {
             damage = (int)(damage * criticalMultiplier);
         }
-        ShowDamage(damage, isCritical);
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
         if (hit.collider != null && hit.collider.CompareTag("Enemy"))
         {
             hasAttacked = true;
             NotifyEnemies();
+
+            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage);
+            }
         }
     }
 
@@ -185,11 +235,14 @@ public class Player : MonoBehaviour
         {
             inventory[inventoryCount] = itemId;
             inventoryCount++;
-            tutorial.OnPlayerAction();
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 6)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
         else
         {
-            Debug.Log("Invent�rio cheio!");
+            Debug.Log("Inventário cheio!");
         }
     }
 

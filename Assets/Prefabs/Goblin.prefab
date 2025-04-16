@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6837453618711510963}
   - component: {fileID: 3969403912037114803}
   - component: {fileID: -4771251646532191689}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Goblin
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.2371801, y: 0.3832221, z: 0.09327576}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -79,7 +79,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 6
   m_Sprite: {fileID: 815424164945274260, guid: e15ea3d7c9cfa184b967de9717009a7a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -147,7 +147,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.04629156, y: -0.092583105}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -157,7 +157,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.15, y: 0.78}
+  m_Size: {x: 0.404706, y: 0.46521744}
   m_EdgeRadius: 0
 --- !u!50 &3969403912037114803
 Rigidbody2D:
@@ -204,3 +204,4 @@ MonoBehaviour:
   criticalMultiplier: 2
   itemPrefabs: []
   isTutorialEnemy: 0
+  damageTextPosition: {fileID: 0}
