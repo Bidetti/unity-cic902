@@ -74,7 +74,29 @@ public class Enemy1 : MonoBehaviour
         {
             damage = (int)(damage * criticalMultiplier);
         }
-        playerScript.TakeDamage(damage);
+
+        Debug.Log($"Enemy Attack: Type={attackType}, Damage={damage}, IsCritical={isCritical}");
+
+        if (playerScript != null)
+        {
+            playerScript.TakeDamage(damage);
+        }
+        else
+        {
+            Debug.LogWarning("Enemy tried to attack but Player script is null.");
+        }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        Debug.Log($"Enemy TakeDamage: Damage={damage}, CurrentHealth={currentHealth}");
+        currentHealth -= damage;
+        ShowDamage(damage);
+        if (currentHealth <= 0)
+        {
+            Debug.Log("Enemy died.");
+            Die();
+        }
     }
 
     void SpecialAttack(int attackType, int index)
@@ -91,16 +113,6 @@ public class Enemy1 : MonoBehaviour
             {
                 attackTimers[i] -= Time.deltaTime;
             }
-        }
-    }
-
-    public void TakeDamage(int damage)
-    {
-        currentHealth -= damage;
-        ShowDamage(damage);
-        if (currentHealth <= 0)
-        {
-            Die();
         }
     }
 

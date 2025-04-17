@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class Player : MonoBehaviour
 {
@@ -7,6 +8,9 @@ public class Player : MonoBehaviour
     public float jumpForce = 2f;
     public GameObject damageTextPrefab;
     public Transform damageTextPosition;
+
+    public Slider healthBar;
+    public TextMeshProUGUI healthText;
 
     private int[] inventory = new int[5];
     private int inventoryCount = 0;
@@ -17,7 +21,7 @@ public class Player : MonoBehaviour
 
     public int maxHealth = 500;
     private int currentHealth;
-    private float[] attackCooldowns = { 5f, 7.5f, 15f };
+    private float[] attackCooldowns = { 0.5f, 5f, 7.5f };
     private float[] attackTimers = { 0f, 0f, 0f };
 
     public bool hasAttacked = false;
@@ -38,6 +42,15 @@ public class Player : MonoBehaviour
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
         tutorial = Object.FindFirstObjectByType<Tutorial>();
+        int enemyLayer = LayerMask.GetMask("Enemy");
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f, enemyLayer);
+
+        if (healthBar != null)
+        {
+            healthBar.maxValue = maxHealth;
+            healthBar.value = currentHealth;
+            healthText.text = currentHealth + "/" + maxHealth;
+        }
     }
 
     void Update()
@@ -140,71 +153,10 @@ public class Player : MonoBehaviour
         {
             TakeDamage(10);
         }
-    }
-
-    void HandleAttacks()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (collision.gameObject.CompareTag("Wall"))
         {
-            Attack(1);
-            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 2)
-            {
-                tutorial.OnPlayerAction();
-            }
+            Debug.Log("Player collided with wall.");
         }
-        if (Input.GetKeyDown(KeyCode.Alpha1) && attackTimers[0] <= 0)
-        {
-            SpecialAttack(1, 0);
-            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 3)
-            {
-                tutorial.OnPlayerAction();
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha2) && attackTimers[1] <= 0)
-        {
-            SpecialAttack(2, 1);
-            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 4)
-            {
-                tutorial.OnPlayerAction();
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha3) && attackTimers[2] <= 0)
-        {
-            SpecialAttack(3, 2);
-            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 5)
-            {
-                tutorial.OnPlayerAction();
-            }
-        }
-    }
-
-    void Attack(int attackType)
-    {
-        int damage = baseDamage * attackType;
-        bool isCritical = Random.value < criticalChance;
-        if (isCritical)
-        {
-            damage = (int)(damage * criticalMultiplier);
-        }
-
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
-        if (hit.collider != null && hit.collider.CompareTag("Enemy"))
-        {
-            hasAttacked = true;
-            NotifyEnemies();
-
-            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(damage);
-            }
-        }
-    }
-
-    void SpecialAttack(int attackType, int index)
-    {
-        Attack(attackType);
-        attackTimers[index] = attackCooldowns[index];
     }
 
     void UpdateAttackTimers()
@@ -218,50 +170,132 @@ public class Player : MonoBehaviour
         }
     }
 
-    void ShowDamage(int damage, bool isCritical)
+    void HandleAttacks()
     {
-        GameObject damageText = Instantiate(damageTextPrefab, damageTextPosition.position, Quaternion.identity);
-        damageText.GetComponent<Text>().text = damage.ToString();
-        if (isCritical)
+        if (Input.GetKeyDown(KeyCode.Space) && attackTimers[0] <= 0) // Ataque básico
         {
-            damageText.GetComponent<Text>().color = Color.red;
-        }
-        Destroy(damageText, 1f);
-    }
-
-    void PickUpItem(int itemId)
-    {
-        if (inventoryCount < 5)
-        {
-            inventory[inventoryCount] = itemId;
-            inventoryCount++;
-            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 6)
+            Attack(1, 0.5f); // Delay de 0.5s
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 2)
             {
                 tutorial.OnPlayerAction();
             }
         }
-        else
+        if (Input.GetKeyDown(KeyCode.Alpha1) && attackTimers[0] <= 0) // Ataque especial 1
         {
-            Debug.Log("Inventário cheio!");
+            SpecialAttack(1, 0, 1.15f); // 15% a mais de dano, Delay de 5s
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 3)
+            {
+                tutorial.OnPlayerAction();
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2) && attackTimers[1] <= 0) // Ataque especial 2
+        {
+            SpecialAttack(2, 1, 1.30f); // 30% a mais de dano, Delay de 7.5s
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 4)
+            {
+                tutorial.OnPlayerAction();
+            }
         }
     }
 
-    void UseItem(int slot)
+    void Attack(int attackType, float delay)
     {
-        if (slot < inventoryCount)
+        int damage = Random.Range(5, 15) + baseDamage;
+        bool isCritical = Random.value < criticalChance;
+        if (isCritical)
         {
-            // criar logica do item ainda....
-            inventory[slot] = 0;
-            inventoryCount--;
+            damage = (int)(damage * criticalMultiplier);
+        }
+
+        Debug.Log($"Player Attack: Type={attackType}, Damage={damage}, IsCritical={isCritical}");
+        Debug.DrawRay(transform.position, transform.right * 1.5f, Color.red, 1f);
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
+        if (hit.collider != null && hit.collider.CompareTag("Enemy"))
+        {
+            hasAttacked = true;
+            NotifyEnemies();
+
+            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
+            if (enemy != null)
+            {
+                Debug.Log($"Player hit Enemy: {enemy.name}, Damage={damage}");
+                enemy.TakeDamage(damage);
+                ShowDamage(damage, isCritical);
+            }
+            else
+            {
+                Debug.LogWarning("Player hit an object with tag 'Enemy' but no Enemy1 script was found.");
+            }
+        }
+        else
+        {
+            Debug.Log("Player Attack missed or no enemy in range.");
+        }
+        attackTimers[0] = delay;
+    }
+
+    void SpecialAttack(int attackType, int index, float damageMultiplier)
+    {
+        int damage = (int)((Random.Range(5, 15) + baseDamage) * damageMultiplier);
+        bool isCritical = Random.value < criticalChance;
+        if (isCritical)
+        {
+            damage = (int)(damage * criticalMultiplier);
+        }
+
+        Debug.Log($"Player Special Attack: Type={attackType}, Damage={damage}, IsCritical={isCritical}");
+        Debug.DrawRay(transform.position, transform.right * 1.5f, Color.blue, 1f);
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
+        if (hit.collider != null && hit.collider.CompareTag("Enemy"))
+        {
+            hasAttacked = true;
+            NotifyEnemies();
+
+            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
+            if (enemy != null)
+            {
+                Debug.Log($"Player hit Enemy: {enemy.name}, Damage={damage}");
+                enemy.TakeDamage(damage);
+                ShowDamage(damage, isCritical);
+            }
+            else
+            {
+                Debug.LogWarning("Player hit an object with tag 'Enemy' but no Enemy1 script was found.");
+            }
+        }
+        else
+        {
+            Debug.Log("Player Special Attack missed or no enemy in range.");
+        }
+        attackTimers[index] = attackCooldowns[index];
+    }
+
+    void ShowDamage(int damage, bool isCritical)
+    {
+        if (damageTextPrefab != null && damageTextPosition != null)
+        {
+            GameObject damageText = Instantiate(damageTextPrefab, damageTextPosition.position, Quaternion.identity);
+            TextMeshProUGUI textComponent = damageText.GetComponent<TextMeshProUGUI>();
+            if (textComponent != null)
+            {
+                textComponent.text = damage.ToString();
+                textComponent.color = isCritical ? Color.red : Color.white;
+            }
+            Destroy(damageText, 1f);
         }
     }
 
     public void TakeDamage(int damage)
     {
+        Debug.Log($"Player TakeDamage: Damage={damage}, CurrentHealth={currentHealth}");
         ShowDamage(damage, false);
         currentHealth -= damage;
+        healthBar.value = currentHealth;
         if (currentHealth <= 0)
         {
+            Debug.Log("Player died.");
             // morreu
         }
     }
@@ -270,6 +304,12 @@ public class Player : MonoBehaviour
     {
         maxHealth += amount;
         currentHealth = maxHealth;
+        if (healthBar != null)
+        {
+            healthBar.maxValue = maxHealth;
+            healthBar.value = currentHealth;
+            healthText.text = currentHealth + "/" + maxHealth;
+        }
     }
 
     void NotifyEnemies()

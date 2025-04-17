@@ -39,38 +39,34 @@ public class Tutorial : MonoBehaviour
         switch (currentStep)
         {
             case 0:
-                tutorialText.text = "Use AD para se mover.";
-                subtitleText.text = "";
+                tutorialText.text = "1. Movimentos";
+                subtitleText.text = "Use AD para se mover.";
                 break;
             case 1:
-                tutorialText.text = "Pressione W para pular.";
-                subtitleText.text = "";
+                tutorialText.text = "2. Pulo";
+                subtitleText.text = "Pressione W para pular.";
                 break;
             case 2:
-                tutorialText.text = "Pressione SPACE para atacar.";
-                subtitleText.text = "";
+                tutorialText.text = "3. Ataque Basico";
+                subtitleText.text = "Pressione SPACE para atacar. (Delay: 0.5f)";
                 break;
             case 3:
-                tutorialText.text = "Pressione 1 para o primeiro ataque especial.";
-                subtitleText.text = "Este ataque causa dano extra.";
+                tutorialText.text = "4. Pressione 1 para o segundo ataque especial.";
+                subtitleText.text = "Este ataque tem um alcance maior. (Delay: 5s)";
                 break;
             case 4:
-                tutorialText.text = "Pressione 2 para o segundo ataque especial.";
-                subtitleText.text = "Este ataque tem um alcance maior.";
+                tutorialText.text = "5. Pressione 2 para o terceiro ataque especial.";
+                subtitleText.text = "Este ataque causa dano em area. (Delay: 7.5s)";
                 break;
             case 5:
-                tutorialText.text = "Pressione 3 para o terceiro ataque especial.";
-                subtitleText.text = "Este ataque causa dano em area.";
-                break;
-            case 6:
-                tutorialText.text = "Mate o inimigo";
-                subtitleText.text = "";
+                tutorialText.text = "6. Desafio";
+                subtitleText.text = "Mate o inimigo";
                 SpawnEnemy();
                 break;
-            //case 7:
-            //    tutorialText.text = "Pegue o item dropado pelo inimigo.";
-            //    subtitleText.text = "";
-            //    break;
+                //case 7:
+                //    tutorialText.text = "Pegue o item dropado pelo inimigo.";
+                //    subtitleText.text = "";
+                //    break;
         }
     }
 
@@ -80,7 +76,7 @@ public class Tutorial : MonoBehaviour
         //{
         //    return;
         //}
-        if (currentStep == 6 && !enemyKilled)
+        if (currentStep == 5 && !enemyKilled)
         {
             return;
         }
@@ -109,7 +105,7 @@ public class Tutorial : MonoBehaviour
     void CompleteTutorial()
     {
         tutorialText.text = "Tutorial concluído!";
-        subtitleText.text = "";
+        subtitleText.text = "Clique E no portal para continuar.";
         StartCoroutine(WaitAndLoadMainScene());
     }
 

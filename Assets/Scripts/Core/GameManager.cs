@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -6,7 +7,7 @@ public class GameManager : MonoBehaviour
     public int playerLevel = 1;
     public int healthIncreasePerLevel = 100;
     public LevelUpUI levelUpUI;
-
+    public TextMeshProUGUI levelText;
     public GameObject enemy1Prefab;
     public GameObject enemy2Prefab;
     public GameObject enemy3Prefab;
@@ -17,6 +18,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        levelText.text = "Level: " + playerLevel;
         player.IncreaseMaxHealth(0);
         GenerateEnemies();
     }
@@ -26,11 +28,18 @@ public class GameManager : MonoBehaviour
         playerLevel++;
         player.IncreaseMaxHealth(healthIncreasePerLevel);
         levelUpUI.ShowLevelUp(playerLevel);
+        levelText.text = "Level: " + playerLevel;
         GenerateEnemies();
     }
 
     void GenerateEnemies()
     {
+        if (player.controlMode == Player.ControlMode.Tutorial)
+        {
+            Debug.Log("Modo tutorial ativo. Nenhum inimigo será gerado.");
+            return;
+        }
+
         ClearExistingEnemies();
 
         int numberOfEnemies = playerLevel * 6;
