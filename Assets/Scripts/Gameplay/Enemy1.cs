@@ -26,6 +26,8 @@ public class Enemy1 : MonoBehaviour
 
     private Slider enemyHealthBar; // Declaração do campo para corrigir CS0103
 
+    private Animator animator;
+
     public delegate void DeathEventHandler();
     public event DeathEventHandler OnDeath;
 
@@ -35,6 +37,7 @@ public class Enemy1 : MonoBehaviour
         currentHealth = maxHealth;
         player = GameObject.FindGameObjectWithTag("Player").transform;
         playerScript = player.GetComponent<Player>();
+        animator = GetComponent<Animator>();
         attackTimer = attackCooldown;
 
         if (attackCollider == null)
@@ -57,14 +60,23 @@ public class Enemy1 : MonoBehaviour
 
             if (distance > attackRange)
             {
+                animator.SetBool("isRunning", true);
                 Vector3 direction = (player.position - transform.position).normalized;
                 transform.position += direction * moveSpeed * Time.deltaTime;
+                if (direction.x != 0)
+                {
+                    transform.localScale = new Vector3(Mathf.Sign(-direction.x) * Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+                }
             }
-
-            if (distance <= attackRange && attackTimer <= 0)
+            else
             {
-                PerformAttack();
-                attackTimer = attackCooldown;
+                animator.SetBool("isRunning", false);
+
+                if (attackTimer <= 0)
+                {
+                    PerformAttack();
+                    attackTimer = attackCooldown;
+                }
             }
         }
 
@@ -89,12 +101,14 @@ public class Enemy1 : MonoBehaviour
             damage = (int)(damage * criticalMultiplier);
         }
 
+        animator.SetTrigger("attack1");
         playerScript.TakeDamage(damage, isCritical);
 
     }
     public void TakeDamage(int damage, bool isCritical = false)
     {
         currentHealth -= damage;
+        animator.SetTrigger("hurt");
         GameObject healthBarObj = Instantiate(enemyHealthBarPrefab, transform.position, Quaternion.identity);
 
         if (enemyHealthBar != null)
@@ -156,6 +170,8 @@ public class Enemy1 : MonoBehaviour
 
     void Die()
     {
+        animator.SetTrigger("death");
+
         if (OnDeath != null)
         {
             OnDeath.Invoke();

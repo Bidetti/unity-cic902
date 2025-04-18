@@ -36,6 +36,7 @@ public class Player : MonoBehaviour
     public BoxCollider2D attackCollider;
     public float attackRange = 1.5f;
     public float attackHeight = 1.0f;
+    public Animator animator;
     private Tutorial tutorial;
 
     public delegate void DeathEventHandler();
@@ -48,6 +49,7 @@ public class Player : MonoBehaviour
     {
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
         tutorial = Object.FindFirstObjectByType<Tutorial>();
         int enemyLayer = LayerMask.GetMask("Enemy");
         if (attackCollider == null)
@@ -130,9 +132,18 @@ public class Player : MonoBehaviour
         Vector3 movement = new Vector3(moveX, 0f, 0f);
         transform.position += movement * moveSpeed * Time.deltaTime;
 
-        if (moveX != 0 && controlMode == ControlMode.Tutorial && tutorial.currentStep == 0)
+        if (moveX != 0)
         {
-            tutorial.OnPlayerAction();
+            animator.SetBool("isRunning", true);
+            transform.localScale = new Vector3(Mathf.Sign(moveX)*5, 5, 5);
+            if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 0)
+            {
+                tutorial.OnPlayerAction();
+            }
+        }
+        else
+        {
+            animator.SetBool("isRunning", false);
         }
     }
 
@@ -140,6 +151,7 @@ public class Player : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.W))
         {
+            animator.SetBool("isJumping", true);
             if (isGrounded)
             {
                 Jump();
@@ -199,6 +211,7 @@ public class Player : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
+            animator.SetBool("isJumping", false);
         }
         if (collision.gameObject.CompareTag("Enemy"))
         {
@@ -253,7 +266,8 @@ public class Player : MonoBehaviour
     }
 
     void Attack(int attackType, float delay)
-    {
+    { 
+        animator.SetTrigger("attack");
         int damage = Random.Range(5, 15) + baseDamage;
         bool isCritical = Random.value < criticalChance;
         if (isCritical)
@@ -270,6 +284,8 @@ public class Player : MonoBehaviour
 
     void SpecialAttack(int attackType, int index, float damageMultiplier)
     {
+        string triggerName = "attack" + attackType;
+        animator.SetTrigger(triggerName);
         int damage = (int)((Random.Range(5, 15) + baseDamage) * damageMultiplier);
         bool isCritical = Random.value < criticalChance;
         if (isCritical)
@@ -287,6 +303,7 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(int damage, bool isCritical = false)
     {
+        animator.SetTrigger("hurt");
         if (damageTextPrefab != null)
         {
             Vector3 textPosition = transform.position + new Vector3(0f, 0.7f, 0f);
@@ -311,6 +328,7 @@ public class Player : MonoBehaviour
 
         if (currentHealth <= 0)
         {
+            animator.SetTrigger("death");
             currentHealth = 0;
             healthBar.value = currentHealth;
             healthText.text = "0/" + maxHealth;
