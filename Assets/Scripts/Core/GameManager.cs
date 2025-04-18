@@ -1,4 +1,7 @@
 using UnityEngine;
+using TMPro;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -6,7 +9,7 @@ public class GameManager : MonoBehaviour
     public int playerLevel = 1;
     public int healthIncreasePerLevel = 100;
     public LevelUpUI levelUpUI;
-
+    public TextMeshProUGUI levelText;
     public GameObject enemy1Prefab;
     public GameObject enemy2Prefab;
     public GameObject enemy3Prefab;
@@ -17,8 +20,11 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        levelText.text = "Level: " + playerLevel;
         player.IncreaseMaxHealth(0);
         GenerateEnemies();
+        Player playerScript = player.GetComponent<Player>();
+        playerScript.OnDeath += HandlePlayerDeath;
     }
 
     public void LevelUp()
@@ -26,11 +32,18 @@ public class GameManager : MonoBehaviour
         playerLevel++;
         player.IncreaseMaxHealth(healthIncreasePerLevel);
         levelUpUI.ShowLevelUp(playerLevel);
+        levelText.text = "Level: " + playerLevel;
         GenerateEnemies();
     }
 
     void GenerateEnemies()
     {
+        if (player.controlMode == Player.ControlMode.Tutorial)
+        {
+            Debug.Log("Modo tutorial ativo. Nenhum inimigo ser� gerado.");
+            return;
+        }
+
         ClearExistingEnemies();
 
         int numberOfEnemies = playerLevel * 6;
@@ -67,5 +80,18 @@ public class GameManager : MonoBehaviour
         {
             Destroy(enemy);
         }
+    }
+
+    void HandlePlayerDeath()
+    {
+        Debug.Log("Player morreu! Reiniciando o jogo...");
+        playerLevel = 1;
+        StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    IEnumerator WaitAndLoadMainScene()
+    {
+        yield return new WaitForSeconds(15);
+        SceneManager.LoadScene("Main");
     }
 }

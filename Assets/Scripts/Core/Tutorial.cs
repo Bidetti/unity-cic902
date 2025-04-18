@@ -1,31 +1,37 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class Tutorial : MonoBehaviour
 {
-    public Text tutorialText;
-    public Text subtitleText; // Novo campo para o subtÌtulo
+    public TextMeshProUGUI tutorialText;
+    public TextMeshProUGUI subtitleText;
     public Player player;
     public GameManager gameManager;
     public GameObject enemyPrefab;
     public Transform spawnPoint;
-
-    private int currentStep = 0;
+    public AudioClip victoryMusic;
+    public AudioClip battleMusic;
+    private AudioSource audioSource;
+    public int currentStep = 0;
     private bool enemyKilled = false;
     private bool itemPickedUp = false;
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
         ShowNextStep();
     }
 
     void Update()
     {
-        if (currentStep == 8 && enemyKilled)
-        {
-            ShowNextStep();
-        }
-        if (currentStep == 9 && itemPickedUp)
+        if (currentStep == 5 && enemyKilled)
         {
             CompleteTutorial();
         }
@@ -36,47 +42,48 @@ public class Tutorial : MonoBehaviour
         switch (currentStep)
         {
             case 0:
-                tutorialText.text = "Use WASD para se mover.";
-                subtitleText.text = "";
+                tutorialText.text = "1. Movimentos";
+                subtitleText.text = "Use AD para se mover.";
                 break;
             case 1:
-                tutorialText.text = "Pressione W para pular.";
-                subtitleText.text = "";
+                tutorialText.text = "2. Pulo";
+                subtitleText.text = "Pressione W para pular.";
                 break;
             case 2:
-                tutorialText.text = "Pressione EspaÁo para atacar.";
-                subtitleText.text = "";
+                tutorialText.text = "3. Ataque Basico";
+                subtitleText.text = "Pressione SPACE para atacar. (Delay: 0.5f)";
                 break;
             case 3:
-                tutorialText.text = "Pressione 1 para o primeiro ataque especial.";
-                subtitleText.text = "Este ataque causa dano extra.";
+                tutorialText.text = "4. Pressione 1 para o segundo ataque especial.";
+                subtitleText.text = "Este ataque tem um alcance maior. (Delay: 5s)";
                 break;
             case 4:
-                tutorialText.text = "Pressione 2 para o segundo ataque especial.";
-                subtitleText.text = "Este ataque tem um alcance maior.";
+                tutorialText.text = "5. Pressione 2 para o terceiro ataque especial.";
+                subtitleText.text = "Este ataque causa dano em area. (Delay: 7.5s)";
                 break;
             case 5:
-                tutorialText.text = "Pressione 3 para o terceiro ataque especial.";
-                subtitleText.text = "Este ataque causa dano em ·rea.";
-                break;
-            case 6:
-                tutorialText.text = "Pegue um item do ch„o.";
-                subtitleText.text = "";
-                break;
-            case 7:
-                tutorialText.text = "Mate o inimigo para concluir o tutorial.";
-                subtitleText.text = "";
+                tutorialText.text = "6. Desafio";
+                subtitleText.text = "Mate o inimigo";
                 SpawnEnemy();
+                PlayBattleMusic();
                 break;
-            case 8:
-                tutorialText.text = "Pegue o item dropado pelo inimigo.";
-                subtitleText.text = "";
-                break;
+                //case 7:
+                //    tutorialText.text = "Pegue o item dropado pelo inimigo.";
+                //    subtitleText.text = "";
+                //    break;
         }
     }
 
     public void OnPlayerAction()
     {
+        //if (currentStep == 7 && !itemPickedUp)
+        //{
+        //    return;
+        //}
+        if (currentStep == 5 && !enemyKilled)
+        {
+            return;
+        }
         currentStep++;
         ShowNextStep();
     }
@@ -89,9 +96,10 @@ public class Tutorial : MonoBehaviour
         enemyScript.isTutorialEnemy = true;
     }
 
-    void OnEnemyKilled()
+    public void OnEnemyKilled()
     {
         enemyKilled = true;
+        Debug.Log("Inimigo morto!");
     }
 
     public void OnItemPickedUp()
@@ -101,7 +109,49 @@ public class Tutorial : MonoBehaviour
 
     void CompleteTutorial()
     {
-        tutorialText.text = "Tutorial concluÌdo!";
-        subtitleText.text = "";
+        tutorialText.text = "Tutorial concluido! Parabens!";
+        subtitleText.text = "Em 15 segundos voce sera redirecionado para a tela inicial.";
+        PlayVictoryMusic();
+        StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    void PlayBattleMusic()
+    {
+        if (battleMusic != null && audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = battleMusic;
+            audioSource.loop = true;
+            audioSource.volume = 0.6f;
+            audioSource.Play();
+            Debug.Log("Tocando m√∫sica de batalha");
+        }
+        else
+        {
+            Debug.LogWarning("M√∫sica de batalha n√£o configurada!");
+        }
+    }
+
+    void PlayVictoryMusic()
+    {
+        if (victoryMusic != null && audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = victoryMusic;
+            audioSource.loop = false;
+            audioSource.volume = 0.7f;
+            audioSource.Play();
+            Debug.Log("Tocando m√∫sica de vit√≥ria");
+        }
+        else
+        {
+            Debug.LogWarning("M√∫sica de vit√≥ria n√£o configurada!");
+        }
+    }
+
+    IEnumerator WaitAndLoadMainScene()
+    {
+        yield return new WaitForSeconds(15);
+        SceneManager.LoadScene("Main");
     }
 }

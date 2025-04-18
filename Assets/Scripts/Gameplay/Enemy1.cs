@@ -1,4 +1,7 @@
 using UnityEngine;
+using TMPro;
+using System.Collections;
+using UnityEngine.UI;
 
 public class Enemy1 : MonoBehaviour
 {
@@ -6,18 +9,22 @@ public class Enemy1 : MonoBehaviour
     public int baseDamage = 10;
     public float criticalChance = 0.1f;
     public float criticalMultiplier = 2f;
-
-    public GameObject[] itemPrefabs; // Array de prefabs de itens
-    public bool isTutorialEnemy = false; // Flag para indicar se � um inimigo do tutorial
+    public float attackCooldown = 2f;
+    private float attackTimer;
+    public GameObject damageTextPrefab;
+    public GameObject enemyHealthBarPrefab;
+    public BoxCollider2D attackCollider;
+    public float attackRange = 1.5f;
+    public float attackHeight = 1.0f;
 
     private int maxHealth;
     private int currentHealth;
-    private float[] attackCooldowns = { 5f, 7.5f, 15f };
-    private float[] attackTimers = { 0f, 0f, 0f };
-
     private Transform player;
     private Player playerScript;
     private bool isChasing = false;
+    public bool isTutorialEnemy = false;
+
+    private Slider enemyHealthBar; // Declaração do campo para corrigir CS0103
 
     public delegate void DeathEventHandler();
     public event DeathEventHandler OnDeath;
@@ -28,16 +35,44 @@ public class Enemy1 : MonoBehaviour
         currentHealth = maxHealth;
         player = GameObject.FindGameObjectWithTag("Player").transform;
         playerScript = player.GetComponent<Player>();
+        attackTimer = attackCooldown;
+
+        if (attackCollider == null)
+        {
+            attackCollider = gameObject.AddComponent<BoxCollider2D>();
+            attackCollider.isTrigger = true;
+            attackCollider.size = new Vector2(attackRange, attackHeight);
+            attackCollider.offset = new Vector2(attackRange / 2, 0);
+            attackCollider.enabled = false;
+        }
+
+        InstantiateHealthBar();
     }
 
     void Update()
     {
-        if (isChasing)
+        if (isChasing && player != null)
         {
-            Move();
-            HandleAttacks();
+            float distance = Vector3.Distance(transform.position, player.position);
+
+            if (distance > attackRange)
+            {
+                Vector3 direction = (player.position - transform.position).normalized;
+                transform.position += direction * moveSpeed * Time.deltaTime;
+            }
+
+            if (distance <= attackRange && attackTimer <= 0)
+            {
+                PerformAttack();
+                attackTimer = attackCooldown;
+            }
         }
-        UpdateAttackTimers();
+
+        if (attackTimer > 0)
+        {
+            attackTimer -= Time.deltaTime;
+        }
+        UpdateHealthBarPosition();
     }
 
     public void StartChasingPlayer()
@@ -45,59 +80,77 @@ public class Enemy1 : MonoBehaviour
         isChasing = true;
     }
 
-    void Move()
+    void PerformAttack()
     {
-        if (player != null)
-        {
-            Vector3 direction = (player.position - transform.position).normalized;
-            transform.position += direction * moveSpeed * Time.deltaTime;
-        }
-    }
-
-    void HandleAttacks()
-    {
-        if (player != null && Vector3.Distance(transform.position, player.position) < 1.5f)
-        {
-            if (attackTimers[0] <= 0) SpecialAttack(1, 0);
-            if (attackTimers[1] <= 0) SpecialAttack(2, 1);
-            if (attackTimers[2] <= 0) SpecialAttack(3, 2);
-        }
-    }
-
-    void Attack(int attackType)
-    {
-        int damage = baseDamage * attackType;
+        int damage = baseDamage;
         bool isCritical = Random.value < criticalChance;
         if (isCritical)
         {
             damage = (int)(damage * criticalMultiplier);
         }
-        playerScript.TakeDamage(damage);
-    }
 
-    void SpecialAttack(int attackType, int index)
-    {
-        Attack(attackType);
-        attackTimers[index] = attackCooldowns[index];
-    }
+        playerScript.TakeDamage(damage, isCritical);
 
-    void UpdateAttackTimers()
-    {
-        for (int i = 0; i < attackTimers.Length; i++)
-        {
-            if (attackTimers[i] > 0)
-            {
-                attackTimers[i] -= Time.deltaTime;
-            }
-        }
     }
-
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage, bool isCritical = false)
     {
         currentHealth -= damage;
+        GameObject healthBarObj = Instantiate(enemyHealthBarPrefab, transform.position, Quaternion.identity);
+
+        if (enemyHealthBar != null)
+        {
+            enemyHealthBar.value = currentHealth;
+        }
+        else
+        {
+            Debug.LogError("Componente Slider não encontrado no prefab enemyHealthBar!");
+        }
+        Vector3 textPosition = transform.position + new Vector3(0f, 0.7f, 0f);
+
+        // Adicione um pequeno offset aleatório horizontal para evitar sobreposição
+        textPosition += new Vector3(Random.Range(-0.2f, 0.2f), 0f, 0f);
+
+        var damageTextObj = Instantiate(damageTextPrefab, textPosition, Quaternion.identity);
+
+        damageText textScript = damageTextObj.GetComponent<damageText>();
+        if (textScript != null)
+        {
+            textScript.SetDamage(damage, isCritical, false);
+        }
+        else
+        {
+            damageTextObj.SendMessage("SetDamage", damage);
+        }
+
         if (currentHealth <= 0)
         {
             Die();
+        }
+    }
+
+    void InstantiateHealthBar()
+    {
+        enemyHealthBarPrefab = Instantiate(enemyHealthBarPrefab, transform.position + new Vector3(0, 1.2f, 0), Quaternion.identity);
+        enemyHealthBarPrefab.transform.SetParent(transform);
+        enemyHealthBarPrefab.transform.localPosition = new Vector3(0, 1.2f, 0);
+        enemyHealthBar = enemyHealthBarPrefab.GetComponentInChildren<Slider>();
+        if (enemyHealthBar != null)
+        {
+            enemyHealthBar.maxValue = maxHealth;
+            enemyHealthBar.value = currentHealth;
+        }
+        else
+        {
+            Debug.LogError("Slider não encontrado no prefab enemyHealthBar!");
+        }
+    }
+
+    void UpdateHealthBarPosition()
+    {
+        if (enemyHealthBarPrefab != null)
+        {
+            // Atualiza a posição da health bar para ficar sempre acima da cabeça do inimigo
+            enemyHealthBarPrefab.transform.position = transform.position + new Vector3(0, 1.2f, 0);
         }
     }
 
@@ -105,19 +158,8 @@ public class Enemy1 : MonoBehaviour
     {
         if (OnDeath != null)
         {
-            OnDeath();
+            OnDeath.Invoke();
         }
-        DropItem();
         Destroy(gameObject);
-    }
-
-    void DropItem()
-    {
-        float dropChance = isTutorialEnemy ? 1f : Mathf.Clamp01(maxHealth / 1000f);
-        if (Random.value < dropChance)
-        {
-            GameObject itemPrefab = itemPrefabs[Random.Range(0, itemPrefabs.Length)];
-            Instantiate(itemPrefab, transform.position, Quaternion.identity);
-        }
     }
 }
