@@ -2808,7 +2808,7 @@ MonoBehaviour:
   spawnPoints:
   - {fileID: 315693659}
   bossSpawnPoint: {fileID: 315693659}
-  menuMusic: {fileID: 8300000, guid: 558dc8d97a4c80f4f9fba8c244c4a64e, type: 3}
+  gameplayMusic: {fileID: 8300000, guid: 558dc8d97a4c80f4f9fba8c244c4a64e, type: 3}
   audioSource: {fileID: 0}
 --- !u!4 &552331781
 Transform:
