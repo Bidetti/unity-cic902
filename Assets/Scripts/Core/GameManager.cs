@@ -18,8 +18,22 @@ public class GameManager : MonoBehaviour
     public Transform[] spawnPoints;
     public Transform bossSpawnPoint;
 
+    public AudioClip menuMusic;
+    public AudioSource audioSource;
+
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.clip = menuMusic;
+        audioSource.loop = true;
+        audioSource.volume = 0.6f;
+        audioSource.Play();
+        Debug.Log("Tocando música de batalha");
+
         levelText.text = "Level: " + playerLevel;
         player.IncreaseMaxHealth(0);
         GenerateEnemies();
@@ -93,5 +107,10 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(15);
         SceneManager.LoadScene("Main");
+    }
+
+    public void StopMusic()
+    {
+        audioSource.Stop();
     }
 }

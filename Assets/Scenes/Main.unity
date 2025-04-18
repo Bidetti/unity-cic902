@@ -555,6 +555,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14332e271e875de47b491a7802b053d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  menuMusic: {fileID: 8300000, guid: 730a3ef5d29dfb14283605eb3fdac5d9, type: 3}
 --- !u!4 &478699667
 Transform:
   m_ObjectHideFlags: 0

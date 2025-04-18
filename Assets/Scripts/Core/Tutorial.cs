@@ -33,6 +33,7 @@ public class Tutorial : MonoBehaviour
     {
         if (currentStep == 5 && enemyKilled)
         {
+            currentStep++;
             CompleteTutorial();
         }
     }
@@ -119,10 +120,10 @@ public class Tutorial : MonoBehaviour
     {
         if (battleMusic != null && audioSource != null)
         {
-            audioSource.Stop();
+            gameManager.StopMusic();
             audioSource.clip = battleMusic;
             audioSource.loop = true;
-            audioSource.volume = 0.6f;
+            audioSource.volume = 0.7f;
             audioSource.Play();
             Debug.Log("Tocando música de batalha");
         }

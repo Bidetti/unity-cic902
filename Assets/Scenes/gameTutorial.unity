@@ -2808,6 +2808,8 @@ MonoBehaviour:
   spawnPoints:
   - {fileID: 315693659}
   bossSpawnPoint: {fileID: 315693659}
+  menuMusic: {fileID: 8300000, guid: 558dc8d97a4c80f4f9fba8c244c4a64e, type: 3}
+  audioSource: {fileID: 0}
 --- !u!4 &552331781
 Transform:
   m_ObjectHideFlags: 0
@@ -5252,7 +5254,7 @@ MonoBehaviour:
   gameManager: {fileID: 552331780}
   enemyPrefab: {fileID: 7393857020678820725, guid: f2b042d65bb40d24899bfb39c81f357a, type: 3}
   spawnPoint: {fileID: 315693659}
-  victoryMusic: {fileID: 0}
+  victoryMusic: {fileID: 8300000, guid: 2fd48a98c89c31643a6477380d02ac52, type: 3}
   battleMusic: {fileID: 8300000, guid: d55c1782e20d11646b04fae28c76a302, type: 3}
   currentStep: 0
 --- !u!4 &1025631441
@@ -7240,6 +7242,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8696237601434868249, guid: af591f2931f21a14fac9a8ff4140ca06, type: 3}
+      propertyPath: animator
+      value: 
+      objectReference: {fileID: 1319090505}
+    - target: {fileID: 8696237601434868249, guid: af591f2931f21a14fac9a8ff4140ca06, type: 3}
       propertyPath: healthBar
       value: 
       objectReference: {fileID: 777069688}
@@ -7268,6 +7274,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: af591f2931f21a14fac9a8ff4140ca06, type: 3}
+--- !u!95 &1319090505 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4060322930996053928, guid: af591f2931f21a14fac9a8ff4140ca06, type: 3}
+  m_PrefabInstance: {fileID: 1319090504}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1332484315
 GameObject:
   m_ObjectHideFlags: 0
