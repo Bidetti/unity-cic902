@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
     public Transform[] spawnPoints;
     public Transform bossSpawnPoint;
 
-    public AudioClip menuMusic;
+    public AudioClip gameplayMusic;
     public AudioSource audioSource;
 
     void Start()
@@ -28,9 +28,9 @@ public class GameManager : MonoBehaviour
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
-        audioSource.clip = menuMusic;
+        audioSource.clip = gameplayMusic;
         audioSource.loop = true;
-        audioSource.volume = 0.6f;
+        audioSource.volume = 0.3f;
         audioSource.Play();
         Debug.Log("Tocando música de batalha");
 
