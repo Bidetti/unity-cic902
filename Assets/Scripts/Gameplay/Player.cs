@@ -1,13 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float jumpForce = 2f;
     public GameObject damageTextPrefab;
-    public Transform damageTextPosition;
 
     public Slider healthBar;
     public TextMeshProUGUI healthText;
@@ -32,7 +33,13 @@ public class Player : MonoBehaviour
     private float doubleJumpTimer = 0f;
 
     private Rigidbody2D rb;
+    public BoxCollider2D attackCollider;
+    public float attackRange = 1.5f;
+    public float attackHeight = 1.0f;
     private Tutorial tutorial;
+
+    public delegate void DeathEventHandler();
+    public event DeathEventHandler OnDeath;
 
     public enum ControlMode { Tutorial, Gameplay }
     public ControlMode controlMode = ControlMode.Gameplay;
@@ -43,14 +50,48 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         tutorial = Object.FindFirstObjectByType<Tutorial>();
         int enemyLayer = LayerMask.GetMask("Enemy");
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f, enemyLayer);
-
+        if (attackCollider == null)
+        {
+            attackCollider = gameObject.AddComponent<BoxCollider2D>();
+            attackCollider.isTrigger = true;
+            attackCollider.size = new Vector2(attackRange, attackHeight);
+            attackCollider.offset = new Vector2(attackRange / 2, 0);
+            attackCollider.enabled = false;
+        }
         if (healthBar != null)
         {
             healthBar.maxValue = maxHealth;
             healthBar.value = currentHealth;
             healthText.text = currentHealth + "/" + maxHealth;
         }
+    }
+
+    IEnumerator PerformAttack(int damage, bool isCritical)
+    {
+        attackCollider.enabled = true;
+        hasAttacked = true;
+        NotifyEnemies();
+        List<Enemy1> hitEnemies = new List<Enemy1>();
+        Collider2D[] hits = Physics2D.OverlapBoxAll(
+            (Vector2)transform.position + attackCollider.offset,
+            attackCollider.size,
+            0);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit.CompareTag("Enemy"))
+            {
+                Enemy1 enemy = hit.GetComponent<Enemy1>();
+                if (enemy != null && !hitEnemies.Contains(enemy))
+                {
+                    hitEnemies.Add(enemy);
+                    enemy.TakeDamage(damage, isCritical);
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.2f);
+        attackCollider.enabled = false;
     }
 
     void Update()
@@ -143,6 +184,16 @@ public class Player : MonoBehaviour
         }
     }
 
+    void OnDrawGizmosSelected()
+    {
+        if (attackCollider != null)
+        {
+            Gizmos.color = Color.red;
+            Vector2 position = (Vector2)transform.position + attackCollider.offset;
+            Gizmos.DrawWireCube(position, attackCollider.size);
+        }
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
@@ -151,11 +202,14 @@ public class Player : MonoBehaviour
         }
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            TakeDamage(10);
-        }
-        if (collision.gameObject.CompareTag("Wall"))
-        {
-            Debug.Log("Player collided with wall.");
+            if (!hasAttacked)
+            {
+                Enemy1 enemy = collision.gameObject.GetComponent<Enemy1>();
+                if (enemy != null && enemy.attackCollider.enabled)
+                {
+                    TakeDamage(enemy.baseDamage);
+                }
+            }
         }
     }
 
@@ -207,31 +261,10 @@ public class Player : MonoBehaviour
             damage = (int)(damage * criticalMultiplier);
         }
 
-        Debug.Log($"Player Attack: Type={attackType}, Damage={damage}, IsCritical={isCritical}");
-        Debug.DrawRay(transform.position, transform.right * 1.5f, Color.red, 1f);
+        float direction = transform.localScale.x > 0 ? 1 : -1;
+        attackCollider.offset = new Vector2(attackRange / 2 * direction, 0);
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
-        if (hit.collider != null && hit.collider.CompareTag("Enemy"))
-        {
-            hasAttacked = true;
-            NotifyEnemies();
-
-            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
-            if (enemy != null)
-            {
-                Debug.Log($"Player hit Enemy: {enemy.name}, Damage={damage}");
-                enemy.TakeDamage(damage);
-                ShowDamage(damage, isCritical);
-            }
-            else
-            {
-                Debug.LogWarning("Player hit an object with tag 'Enemy' but no Enemy1 script was found.");
-            }
-        }
-        else
-        {
-            Debug.Log("Player Attack missed or no enemy in range.");
-        }
+        StartCoroutine(PerformAttack(damage, isCritical));
         attackTimers[0] = delay;
     }
 
@@ -244,59 +277,45 @@ public class Player : MonoBehaviour
             damage = (int)(damage * criticalMultiplier);
         }
 
-        Debug.Log($"Player Special Attack: Type={attackType}, Damage={damage}, IsCritical={isCritical}");
-        Debug.DrawRay(transform.position, transform.right * 1.5f, Color.blue, 1f);
+        float direction = transform.localScale.x > 0 ? 1 : -1;
+        attackCollider.offset = new Vector2(attackRange / 2 * direction, 0);
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.right, 1.5f);
-        if (hit.collider != null && hit.collider.CompareTag("Enemy"))
-        {
-            hasAttacked = true;
-            NotifyEnemies();
+        StartCoroutine(PerformAttack(damage, isCritical));
 
-            Enemy1 enemy = hit.collider.GetComponent<Enemy1>();
-            if (enemy != null)
-            {
-                Debug.Log($"Player hit Enemy: {enemy.name}, Damage={damage}");
-                enemy.TakeDamage(damage);
-                ShowDamage(damage, isCritical);
-            }
-            else
-            {
-                Debug.LogWarning("Player hit an object with tag 'Enemy' but no Enemy1 script was found.");
-            }
-        }
-        else
-        {
-            Debug.Log("Player Special Attack missed or no enemy in range.");
-        }
         attackTimers[index] = attackCooldowns[index];
     }
 
-    void ShowDamage(int damage, bool isCritical)
+    public void TakeDamage(int damage, bool isCritical = false)
     {
-        if (damageTextPrefab != null && damageTextPosition != null)
+        if (damageTextPrefab != null)
         {
-            GameObject damageText = Instantiate(damageTextPrefab, damageTextPosition.position, Quaternion.identity);
-            TextMeshProUGUI textComponent = damageText.GetComponent<TextMeshProUGUI>();
-            if (textComponent != null)
-            {
-                textComponent.text = damage.ToString();
-                textComponent.color = isCritical ? Color.red : Color.white;
-            }
-            Destroy(damageText, 1f);
-        }
-    }
+            Vector3 textPosition = transform.position + new Vector3(0f, 0.7f, 0f);
 
-    public void TakeDamage(int damage)
-    {
-        Debug.Log($"Player TakeDamage: Damage={damage}, CurrentHealth={currentHealth}");
-        ShowDamage(damage, false);
+            textPosition += new Vector3(Random.Range(-0.2f, 0.2f), 0f, 0f);
+
+            GameObject damageTextObj = Instantiate(damageTextPrefab, textPosition, Quaternion.identity);
+
+            damageText textScript = damageTextObj.GetComponent<damageText>();
+            if (textScript != null)
+            {
+                textScript.SetDamage(damage, isCritical, true);
+            }
+            else
+            {
+                damageTextObj.SendMessage("SetDamage", damage);
+            }
+        }
         currentHealth -= damage;
         healthBar.value = currentHealth;
+        healthText.text = currentHealth + "/" + maxHealth;
+
         if (currentHealth <= 0)
         {
-            Debug.Log("Player died.");
-            // morreu
+            currentHealth = 0;
+            healthBar.value = currentHealth;
+            healthText.text = "0/" + maxHealth;
+            OnDeath?.Invoke();
+            Destroy(gameObject);
         }
     }
 

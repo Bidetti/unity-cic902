@@ -1,5 +1,7 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -21,6 +23,8 @@ public class GameManager : MonoBehaviour
         levelText.text = "Level: " + playerLevel;
         player.IncreaseMaxHealth(0);
         GenerateEnemies();
+        Player playerScript = player.GetComponent<Player>();
+        playerScript.OnDeath += HandlePlayerDeath;
     }
 
     public void LevelUp()
@@ -36,7 +40,7 @@ public class GameManager : MonoBehaviour
     {
         if (player.controlMode == Player.ControlMode.Tutorial)
         {
-            Debug.Log("Modo tutorial ativo. Nenhum inimigo será gerado.");
+            Debug.Log("Modo tutorial ativo. Nenhum inimigo serï¿½ gerado.");
             return;
         }
 
@@ -76,5 +80,18 @@ public class GameManager : MonoBehaviour
         {
             Destroy(enemy);
         }
+    }
+
+    void HandlePlayerDeath()
+    {
+        Debug.Log("Player morreu! Reiniciando o jogo...");
+        playerLevel = 1;
+        StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    IEnumerator WaitAndLoadMainScene()
+    {
+        yield return new WaitForSeconds(15);
+        SceneManager.LoadScene("Main");
     }
 }

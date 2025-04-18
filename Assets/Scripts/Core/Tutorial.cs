@@ -12,23 +12,26 @@ public class Tutorial : MonoBehaviour
     public GameManager gameManager;
     public GameObject enemyPrefab;
     public Transform spawnPoint;
-
+    public AudioClip victoryMusic;
+    public AudioClip battleMusic;
+    private AudioSource audioSource;
     public int currentStep = 0;
     private bool enemyKilled = false;
     private bool itemPickedUp = false;
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
         ShowNextStep();
     }
 
     void Update()
     {
-        if (currentStep == 8 && enemyKilled)
-        {
-            OnPlayerAction();
-        }
-        if (currentStep == 9 && itemPickedUp)
+        if (currentStep == 5 && enemyKilled)
         {
             CompleteTutorial();
         }
@@ -62,6 +65,7 @@ public class Tutorial : MonoBehaviour
                 tutorialText.text = "6. Desafio";
                 subtitleText.text = "Mate o inimigo";
                 SpawnEnemy();
+                PlayBattleMusic();
                 break;
                 //case 7:
                 //    tutorialText.text = "Pegue o item dropado pelo inimigo.";
@@ -92,9 +96,10 @@ public class Tutorial : MonoBehaviour
         enemyScript.isTutorialEnemy = true;
     }
 
-    void OnEnemyKilled()
+    public void OnEnemyKilled()
     {
         enemyKilled = true;
+        Debug.Log("Inimigo morto!");
     }
 
     public void OnItemPickedUp()
@@ -104,18 +109,49 @@ public class Tutorial : MonoBehaviour
 
     void CompleteTutorial()
     {
-        tutorialText.text = "Tutorial conclu�do!";
-        subtitleText.text = "Clique E no portal para continuar.";
+        tutorialText.text = "Tutorial concluido! Parabens!";
+        subtitleText.text = "Em 15 segundos voce sera redirecionado para a tela inicial.";
+        PlayVictoryMusic();
         StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    void PlayBattleMusic()
+    {
+        if (battleMusic != null && audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = battleMusic;
+            audioSource.loop = true;
+            audioSource.volume = 0.6f;
+            audioSource.Play();
+            Debug.Log("Tocando música de batalha");
+        }
+        else
+        {
+            Debug.LogWarning("Música de batalha não configurada!");
+        }
+    }
+
+    void PlayVictoryMusic()
+    {
+        if (victoryMusic != null && audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = victoryMusic;
+            audioSource.loop = false;
+            audioSource.volume = 0.7f;
+            audioSource.Play();
+            Debug.Log("Tocando música de vitória");
+        }
+        else
+        {
+            Debug.LogWarning("Música de vitória não configurada!");
+        }
     }
 
     IEnumerator WaitAndLoadMainScene()
     {
-        // Tocar m�sica aqui
-        // AudioSource audioSource = GetComponent<AudioSource>();
-        // audioSource.Play();
-
-        yield return new WaitForSeconds(5);
+        yield return new WaitForSeconds(15);
         SceneManager.LoadScene("Main");
     }
 }
