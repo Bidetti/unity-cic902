@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1787961658334949936}
   - component: {fileID: 7760169678990424520}
   - component: {fileID: 2368372600699458380}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Minotaur
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -76,7 +76,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 7
   m_Sprite: {fileID: -4258029860312167874, guid: 90123fc2c05b09c4c8eae01e2b5be790, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
