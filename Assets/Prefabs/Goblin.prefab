@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.2371801, y: 0.3832221, z: 0.09327576}
-  m_LocalScale: {x: 5, y: 5, z: 5}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 4, y: 4, z: 4}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -206,6 +206,6 @@ MonoBehaviour:
   damageTextPrefab: {fileID: 5524448551865217866, guid: 29a2fc92fcef87c41b0ddf8db13797a7, type: 3}
   enemyHealthBarPrefab: {fileID: 1115645567552962593, guid: 33f3cbd55d7ca064ebdf76f75f82fa0b, type: 3}
   attackCollider: {fileID: 0}
-  attackRange: 1.5
+  attackRange: 1.3
   attackHeight: 1
   isTutorialEnemy: 0

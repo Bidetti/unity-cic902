@@ -26,16 +26,19 @@ public class Player : MonoBehaviour
     private float[] attackTimers = { 0f, 0f, 0f };
 
     public bool hasAttacked = false;
-
     private bool isGrounded = false;
     private bool canDoubleJump = true;
     private float doubleJumpCooldown = 5f;
     private float doubleJumpTimer = 0f;
+    private float damageCooldownTimer = 0f;  // Tempo de recarga após dano (0.5s sem poder atacar)
 
     private Rigidbody2D rb;
     public BoxCollider2D attackCollider;
-    public float attackRange = 1.5f;
+    public float attackRange = 2f;
     public float attackHeight = 1.0f;
+    public float basicKnockback = 5f;
+    public float special1Knockback = 7.5f;
+    public float special2Knockback = 10f;
     public Animator animator;
     private Tutorial tutorial;
 
@@ -52,14 +55,10 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
         tutorial = Object.FindFirstObjectByType<Tutorial>();
         int enemyLayer = LayerMask.GetMask("Enemy");
-        if (attackCollider == null)
-        {
-            attackCollider = gameObject.AddComponent<BoxCollider2D>();
-            attackCollider.isTrigger = true;
-            attackCollider.size = new Vector2(attackRange, attackHeight);
-            attackCollider.offset = new Vector2(attackRange / 2, 0);
-            attackCollider.enabled = false;
-        }
+        attackCollider = gameObject.AddComponent<BoxCollider2D>();
+        attackCollider.isTrigger = true;
+        UpdateAttackCollider();
+        attackCollider.enabled = false;
         if (healthBar != null)
         {
             healthBar.maxValue = maxHealth;
@@ -68,32 +67,78 @@ public class Player : MonoBehaviour
         }
     }
 
-    IEnumerator PerformAttack(int damage, bool isCritical)
+    private void UpdateAttackCollider()
+    {
+        // Tamanho
+        attackCollider.size = new Vector2(attackRange, attackHeight);
+        // Offset (metade do range para frente, considerando flip)
+        float dir = Mathf.Sign(transform.localScale.x);
+        attackCollider.offset = new Vector2(attackRange / 2f * dir, 0);
+    }
+
+    IEnumerator PerformAttack(int damage, bool isCritical, float knockback)
     {
         attackCollider.enabled = true;
         hasAttacked = true;
         NotifyEnemies();
-        List<Enemy1> hitEnemies = new List<Enemy1>();
+        List<IEnemy> hitEnemies = new List<IEnemy>();
         Collider2D[] hits = Physics2D.OverlapBoxAll(
             (Vector2)transform.position + attackCollider.offset,
             attackCollider.size,
             0);
 
-        foreach (Collider2D hit in hits)
+        if (Mathf.Approximately(knockback, basicKnockback))
         {
-            if (hit.CompareTag("Enemy"))
+            // Ataque básico: causa dano apenas no inimigo mais próximo
+            float minDistance = Mathf.Infinity;
+            IEnemy closestEnemy = null;
+            Collider2D closestCollider = null;
+            foreach (Collider2D hit in hits)
             {
-                Enemy1 enemy = hit.GetComponent<Enemy1>();
-                if (enemy != null && !hitEnemies.Contains(enemy))
+                if (hit.CompareTag("Enemy"))
                 {
-                    hitEnemies.Add(enemy);
-                    enemy.TakeDamage(damage, isCritical);
+                    float dist = Vector2.Distance(hit.transform.position, transform.position);
+                    if (dist < minDistance)
+                    {
+                        IEnemy e = hit.GetComponent<IEnemy>();
+                        if (e != null)
+                        {
+                            minDistance = dist;
+                            closestEnemy = e;
+                            closestCollider = hit;
+                        }
+                    }
+                }
+            }
+            if (closestEnemy != null)
+            {
+                closestEnemy.TakeDamage(damage, isCritical);
+                Vector2 knockDir = (closestCollider.transform.position - transform.position).normalized;
+                closestEnemy.ApplyKnockback(knockDir * knockback);
+            }
+        }
+        else
+        {
+            // Ataques especiais: causam dano em todos os inimigos na área de ataque
+            foreach (Collider2D hit in hits)
+            {
+                if (hit.CompareTag("Enemy"))
+                {
+                    IEnemy enemy = hit.GetComponent<IEnemy>();
+                    if (enemy != null && !hitEnemies.Contains(enemy))
+                    {
+                        hitEnemies.Add(enemy);
+                        enemy.TakeDamage(damage, isCritical);
+                    }
+                    Vector2 knockDir = (hit.transform.position - transform.position).normalized;
+                    enemy.ApplyKnockback(knockDir * knockback);
                 }
             }
         }
 
         yield return new WaitForSeconds(0.2f);
         attackCollider.enabled = false;
+        hasAttacked = false;
     }
 
     void Update()
@@ -109,6 +154,7 @@ public class Player : MonoBehaviour
 
         UpdateAttackTimers();
         UpdateDoubleJumpTimer();
+        UpdateDamageCooldown();
     }
 
     void TutorialControl()
@@ -135,7 +181,7 @@ public class Player : MonoBehaviour
         if (moveX != 0)
         {
             animator.SetBool("isRunning", true);
-            transform.localScale = new Vector3(Mathf.Sign(moveX)*5, 5, 5);
+            transform.localScale = new Vector3(Mathf.Sign(moveX) * 5, 5, 5);
             if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 0)
             {
                 tutorial.OnPlayerAction();
@@ -222,6 +268,11 @@ public class Player : MonoBehaviour
                 {
                     TakeDamage(enemy.baseDamage);
                 }
+                Enemy2 enemy2 = collision.gameObject.GetComponent<Enemy2>();
+                if (enemy2 != null && enemy2.attackCollider.enabled)
+                {
+                    TakeDamage(enemy2.baseDamage);
+                }
             }
         }
     }
@@ -237,27 +288,35 @@ public class Player : MonoBehaviour
         }
     }
 
+    void UpdateDamageCooldown()
+    {
+        if (damageCooldownTimer > 0)
+        {
+            damageCooldownTimer -= Time.deltaTime;
+        }
+    }
+
     void HandleAttacks()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && attackTimers[0] <= 0) // Ataque básico
+        if (Input.GetKeyDown(KeyCode.Space) && attackTimers[0] <= 0 && damageCooldownTimer <= 0f) // Ataque básico
         {
-            Attack(1, 0.5f); // Delay de 0.5s
+            Attack();
             if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 2)
             {
                 tutorial.OnPlayerAction();
             }
         }
-        if (Input.GetKeyDown(KeyCode.Alpha1) && attackTimers[0] <= 0) // Ataque especial 1
+        if (Input.GetKeyDown(KeyCode.Alpha1) && attackTimers[1] <= 0 && damageCooldownTimer <= 0f) // Ataque especial 1
         {
-            SpecialAttack(1, 0, 1.15f); // 15% a mais de dano, Delay de 5s
+            SpecialAttack(1, 1.15f); // 15% a mais de dano, Delay de 5s
             if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 3)
             {
                 tutorial.OnPlayerAction();
             }
         }
-        if (Input.GetKeyDown(KeyCode.Alpha2) && attackTimers[1] <= 0) // Ataque especial 2
+        if (Input.GetKeyDown(KeyCode.Alpha2) && attackTimers[2] <= 0 && damageCooldownTimer <= 0f) // Ataque especial 2
         {
-            SpecialAttack(2, 1, 1.30f); // 30% a mais de dano, Delay de 7.5s
+            SpecialAttack(2, 1.30f); // 30% a mais de dano, Delay de 7.5s
             if (controlMode == ControlMode.Tutorial && tutorial.currentStep == 4)
             {
                 tutorial.OnPlayerAction();
@@ -265,8 +324,8 @@ public class Player : MonoBehaviour
         }
     }
 
-    void Attack(int attackType, float delay)
-    { 
+    void Attack()
+    {
         animator.SetTrigger("attack");
         int damage = Random.Range(5, 15) + baseDamage;
         bool isCritical = Random.value < criticalChance;
@@ -278,11 +337,12 @@ public class Player : MonoBehaviour
         float direction = transform.localScale.x > 0 ? 1 : -1;
         attackCollider.offset = new Vector2(attackRange / 2 * direction, 0);
 
-        StartCoroutine(PerformAttack(damage, isCritical));
-        attackTimers[0] = delay;
+        UpdateAttackCollider();
+        StartCoroutine(PerformAttack(damage, isCritical, basicKnockback));
+        attackTimers[0] = attackCooldowns[0];
     }
 
-    void SpecialAttack(int attackType, int index, float damageMultiplier)
+    void SpecialAttack(int attackType, float damageMultiplier)
     {
         string triggerName = "attack" + attackType;
         animator.SetTrigger(triggerName);
@@ -296,9 +356,11 @@ public class Player : MonoBehaviour
         float direction = transform.localScale.x > 0 ? 1 : -1;
         attackCollider.offset = new Vector2(attackRange / 2 * direction, 0);
 
-        StartCoroutine(PerformAttack(damage, isCritical));
+        UpdateAttackCollider();
 
-        attackTimers[index] = attackCooldowns[index];
+        float kb = attackType == 1 ? special1Knockback : special2Knockback;
+        StartCoroutine(PerformAttack(damage, isCritical, kb));
+        attackTimers[attackType] = attackCooldowns[attackType];
     }
 
     public void TakeDamage(int damage, bool isCritical = false)
@@ -307,11 +369,8 @@ public class Player : MonoBehaviour
         if (damageTextPrefab != null)
         {
             Vector3 textPosition = transform.position + new Vector3(0f, 0.7f, 0f);
-
             textPosition += new Vector3(Random.Range(-0.2f, 0.2f), 0f, 0f);
-
             GameObject damageTextObj = Instantiate(damageTextPrefab, textPosition, Quaternion.identity);
-
             damageText textScript = damageTextObj.GetComponent<damageText>();
             if (textScript != null)
             {
@@ -325,6 +384,7 @@ public class Player : MonoBehaviour
         currentHealth -= damage;
         healthBar.value = currentHealth;
         healthText.text = currentHealth + "/" + maxHealth;
+        damageCooldownTimer = 0.5f;  // Inicia cooldown de 0.5s após sofrer dano
 
         if (currentHealth <= 0)
         {
@@ -354,7 +414,7 @@ public class Player : MonoBehaviour
         GameObject[] enemyObjects = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemyObject in enemyObjects)
         {
-            Enemy1 enemy = enemyObject.GetComponent<Enemy1>();
+            IEnemy enemy = enemyObject.GetComponent<IEnemy>();
             if (enemy != null)
             {
                 enemy.StartChasingPlayer();

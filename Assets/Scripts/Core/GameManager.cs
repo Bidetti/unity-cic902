@@ -8,18 +8,17 @@ public class GameManager : MonoBehaviour
     public Player player;
     public int playerLevel = 1;
     public int healthIncreasePerLevel = 100;
-    public LevelUpUI levelUpUI;
     public TextMeshProUGUI levelText;
+    public TextMeshProUGUI finalText;
     public GameObject enemy1Prefab;
     public GameObject enemy2Prefab;
-    public GameObject enemy3Prefab;
-    public GameObject bossPrefab;
-
+    public GameObject portalPrefab;
+    public Transform portalSpawnPoint;
     public Transform[] spawnPoints;
-    public Transform bossSpawnPoint;
-
     public AudioClip gameplayMusic;
     public AudioSource audioSource;
+
+    private int enemiesAlive = 0;
 
     void Start()
     {
@@ -41,49 +40,70 @@ public class GameManager : MonoBehaviour
         playerScript.OnDeath += HandlePlayerDeath;
     }
 
-    public void LevelUp()
+    public IEnumerator LevelUp()
     {
         playerLevel++;
         player.IncreaseMaxHealth(healthIncreasePerLevel);
-        levelUpUI.ShowLevelUp(playerLevel);
+        LevelUpUI.Instance.ShowLevelUp(playerLevel);
         levelText.text = "Level: " + playerLevel;
-        GenerateEnemies();
+
+        if (playerLevel < 5)
+        {
+            yield return new WaitForSeconds(3f); // <- Espera aqui antes de gerar inimigos
+
+            GenerateEnemies();
+        }
+        else
+        {
+            finalText.gameObject.SetActive(true);
+            SpawnPortal();
+        }
     }
 
     void GenerateEnemies()
     {
         if (player.controlMode == Player.ControlMode.Tutorial)
         {
-            Debug.Log("Modo tutorial ativo. Nenhum inimigo ser� gerado.");
+            Debug.Log("Modo tutorial ativo. Nenhum inimigo será gerado.");
             return;
         }
 
         ClearExistingEnemies();
-
-        int numberOfEnemies = playerLevel * 6;
+        int numberOfEnemies = playerLevel;
+        enemiesAlive = 0;
+        
         for (int i = 0; i < numberOfEnemies; i++)
         {
             GameObject enemyPrefab = GetEnemyPrefab();
             Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+            GameObject enemyObj = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+
+            IEnemy enemy = enemyObj.GetComponent<IEnemy>();
+            if (enemy is Enemy1 enemy1)
+            {
+                enemy1.OnDeath += OnEnemyDeath;
+            }
+            else if (enemy is Enemy2 enemy2)
+            {
+                enemy2.OnDeath += OnEnemyDeath;
+            }
+
+            enemiesAlive++;
         }
 
-        Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation);
+        
     }
 
     GameObject GetEnemyPrefab()
     {
-        if (playerLevel < 5)
+        float randomValue = Random.value;
+        if (randomValue < 0.7f)
         {
             return enemy1Prefab;
         }
-        else if (playerLevel < 10)
-        {
-            return enemy2Prefab;
-        }
         else
         {
-            return enemy3Prefab;
+            return enemy2Prefab;
         }
     }
 
@@ -101,6 +121,21 @@ public class GameManager : MonoBehaviour
         Debug.Log("Player morreu! Reiniciando o jogo...");
         playerLevel = 1;
         StartCoroutine(WaitAndLoadMainScene());
+    }
+
+    private void OnEnemyDeath()
+    {
+        enemiesAlive--;
+
+        if (enemiesAlive <= 0)
+        {
+            StartCoroutine(LevelUp());
+        }
+    }
+
+    private void SpawnPortal()
+    {
+        Instantiate(portalPrefab, portalSpawnPoint.position, portalSpawnPoint.rotation);
     }
 
     IEnumerator WaitAndLoadMainScene()

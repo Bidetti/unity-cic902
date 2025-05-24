@@ -3,24 +3,23 @@ using TMPro;
 using System.Collections;
 using UnityEngine.UI;
 
-public class Enemy1 : MonoBehaviour, IEnemy
+public class Enemy2 : MonoBehaviour, IEnemy
 {
-    public float moveSpeed = 2f;
-    public int baseDamage = 10;
-    public float criticalChance = 0.1f;
+    public float moveSpeed = 1.5f;
+    public int baseDamage = 35;
+    public float criticalChance = 0.2f;
     public float criticalMultiplier = 2f;
-    public float attackCooldown = 2f;
+    public float attackCooldown = 3f;
     private float attackTimer;
     public GameObject damageTextPrefab;
     public GameObject enemyHealthBarPrefab;
     public BoxCollider2D attackCollider;
     public float attackRange = 1.5f;
     public float attackHeight = 1.0f;
-    public float knockbackMultiplier = 1f;
-    public float knockbackToPlayerMultiplier = 5f;  // Multiplicador de knockback causado ao Player
-    private bool hasJumped = false;
+    public float knockbackMultiplier = 0.6f;
+    public float knockbackToPlayerMultiplier = 7f;  // Multiplicador de knockback causado ao Player
     public float jumpForce = 5f;  // Força do pulo para alcançar o player em altura
-
+    private bool hasJumped = false;
     private int maxHealth;
     private int currentHealth;
     private Transform player;
@@ -36,7 +35,7 @@ public class Enemy1 : MonoBehaviour, IEnemy
 
     void Start()
     {
-        maxHealth = Random.Range(150, 300);
+        maxHealth = Random.Range(350, 500);
         currentHealth = maxHealth;
         player = GameObject.FindGameObjectWithTag("Player").transform;
         playerScript = player.GetComponent<Player>();
@@ -143,6 +142,7 @@ public class Enemy1 : MonoBehaviour, IEnemy
             Debug.LogError("Componente Slider não encontrado no prefab enemyHealthBar!");
         }
         Vector3 textPosition = transform.position + new Vector3(0f, 0.7f, 0f);
+        // Adicione um pequeno offset aleatório horizontal para evitar sobreposição
         textPosition += new Vector3(Random.Range(-0.2f, 0.2f), 0f, 0f);
         var damageTextObj = Instantiate(damageTextPrefab, textPosition, Quaternion.identity);
 
