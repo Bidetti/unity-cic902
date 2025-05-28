@@ -9,6 +9,7 @@ TagManager:
   - SpawnPoint
   - Wall
   - Portal
+  - Boss
   layers:
   - Default
   - TransparentFX
@@ -19,7 +20,7 @@ TagManager:
   - Player
   - Enemy
   - Portal
-  - 
+  - Walkable
   - 
   - 
   - 

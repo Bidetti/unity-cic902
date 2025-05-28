@@ -5516,7 +5516,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Entre no portal e aperte "E" para continuar
+  m_text: Entre no portal e aperte "E" para iniciar sua batalha contra o BOSS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: a37d44ad7f30cfb498f976c4fbd2de62, type: 2}
   m_sharedMaterial: {fileID: 4767359445626434944, guid: a37d44ad7f30cfb498f976c4fbd2de62, type: 2}

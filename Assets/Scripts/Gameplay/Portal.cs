@@ -26,6 +26,6 @@ public class Portal : MonoBehaviour
         animator.SetTrigger("close");
         yield return new WaitForSeconds(0.8f);
         Debug.Log("Iniciando batalha com o boss...");
-        SceneManager.LoadScene("BossFight");
+        SceneManager.LoadScene("BossFightScene");
     }
 }
